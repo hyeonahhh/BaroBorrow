@@ -1,16 +1,17 @@
 from django.contrib import admin
 from django.urls import path, include
+from rest_framework.urlpatterns import format_suffix_patterns
+
+from BBApp import views
 
 from rest_framework.routers import SimpleRouter
-from .views import ProductViewSet, BarrowProductViewSet
+from .views import ProductList, ProductDetail, ProductLikeDetail
 
-product_router = SimpleRouter(trailing_slash=False)
-product_router.register('products', ProductViewSet, basename='product')
-
-barrowproduct_router = SimpleRouter(trailing_slash=False)
-barrowproduct_router.register('barrowproducts', BarrowProductViewSet, basename='barrowproduct')
 
 urlpatterns = [
-    path('', include(product_router.urls)),
-    path('products/<int:product_id>/', include(barrowproduct_router)),
+    path('product/', ProductList.as_view()),
+    path('product/<int:pk>/', ProductDetail.as_view()),
+    path('product/<int:pk>/like/', ProductLikeDetail.as_view()),
 ]
+
+urlpatterns = format_suffix_patterns(urlpatterns)
