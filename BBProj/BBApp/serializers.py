@@ -8,14 +8,14 @@ class ProductSerializer(ModelSerializer):
     owner = UserBasicSerializer(read_only=True)
     class Meta:
         model = Product
-        fields = ['id', 'owner', 'product_name', 'list_price', 'deposit', 'rental_fee', 'explanation', 'condition', 'address', 'detail_address', 'product_photo', 'barrow_available_start', 'barrow_available_end']
+        fields = ['id', 'owner', 'product_name', 'list_price', 'deposit', 'rental_fee', 'explanation', 'condition', 'address', 'detail_address', 'product_photo', 'barrow_available_start', 'barrow_available_end', 'barrow_method']
 
 class ProductLikeSerializer(ModelSerializer):
     like_users = UserLikeSerializer(read_only=True, many=True)
     owner = UserBasicSerializer(read_only=True)
     class Meta:
         model = Product
-        fields = ['id', 'owner', 'product_name', 'like_users', 'list_price', 'deposit', 'rental_fee', 'explanation', 'condition', 'address', 'detail_address', 'product_photo', 'barrow_available_start', 'barrow_available_end']
+        fields = ['id', 'owner', 'product_name', 'like_users', 'list_price', 'deposit', 'rental_fee', 'explanation', 'condition', 'address', 'detail_address', 'product_photo', 'barrow_available_start', 'barrow_available_end', 'barrow_method']
 
 #빌리기
 class BarrowProductSerializer(ModelSerializer):

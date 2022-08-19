@@ -29,6 +29,8 @@ class Product(models.Model):
     barrow_available_start = models.DateField()
     #대여가능기간 끝
     barrow_available_end = models.DateField()
+    #대여 방식
+    barrow_method = models.CharField(max_length=256)
     #활성화 비활성화
     is_activate = models.BooleanField(default=True)
     #대여중인지 아닌지
