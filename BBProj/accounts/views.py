@@ -19,14 +19,14 @@ def account_list(request):
     if request.method == 'GET':
         query_set = User.objects.all()
         serializer = AccountSerializer(query_set, many=True)
-        return JsonResponse(serializer.data, safe=False)
+        return Response(serializer.data, safe=False)
 
     elif request.method == 'POST':
-        data = JSONParser.parse(request)
+        data = JSONParser().parse(request)
         serializer = AccountSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
-            return JsonResponse(serializer.data, status=201)
+            return JsonResponse({'message':serializer}, status=201)
         return JsonResponse(serializer.errors, status=400)
 
 
@@ -54,11 +54,11 @@ def account(request, pk):
 def login(request):
     if request.method == 'POST':
         data = JSONParser().parse(request)
-        search_username = data['username']
+        search_username = data['data']['username']
         obj  = User.objects.get(username=search_username)
-
-        if data['password'] == obj.password:
-            return HttpResponse(status=200)
+        serializer = AccountSerializer(obj)
+        if data['data']['password'] == obj.password:
+            return JsonResponse(serializer.data, status=200)
         else:
             return HttpResponse(status=400)
 

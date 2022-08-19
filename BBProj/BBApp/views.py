@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework import viewsets
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from accounts.models import User
 
 # Create your views here.
 
@@ -22,17 +23,17 @@ def home(request):
 
 class ProductLikeDetail(APIView):
     def get(self, request, pk):
-        if request.user.is_authenticated:
-            product = get_object_or_404(Product, pk=pk)
-            if product.like_users.filter(pk=request.user.pk).exists():
-                product.like_users.remove(request.user)
-                product.save()
-            else:
-                product.like_users.add(request.user)
-                product.save()
-            serializer = ProductLikeSerializer(product)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        product = get_object_or_404(Product, pk=pk)
+        username = request.GET.get('username', None)
+        obj  = User.objects.get(username=username)
+        if product.like_users.filter(pk=obj.pk).exists():
+            product.like_users.remove(obj)
+            product.save()
+        else:
+            product.like_users.add(obj)
+            product.save()
+        serializer = ProductLikeSerializer(product)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class NotBarrowedProductList(APIView):
     def get(self, request):
@@ -48,13 +49,14 @@ class ProductList(APIView):
         return Response(serializers.data)
     
     def post(self, request): #빌려주기 작성
-        if request.user.is_authenticated:
-            serializer = ProductSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save(owner=request.user)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        print(request.data['owner']['username'])
+        obj  = User.objects.get(username=request.data['owner']['username'])
+        serializer = ProductSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(owner=obj)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class TodayAvailableList(APIView):
     def get(self, request, format=None): #물품 목록들 조회
@@ -90,34 +92,34 @@ class ProductDetail(APIView):
 
 class CreateBarrowProduct(APIView):
     def post(self, request, pk): #빌리기 정보 저장
-        if request.user.is_authenticated:
-            serializer = BarrowProductSerializer(data=request.data)
-            product = get_object_or_404(Product, pk=pk)
-            serializer.product = product.id
-            print(serializer)
-            if serializer.is_valid():
-                serializer.save(user=request.user)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        print(request.data['user']['username'])
+        obj  = User.objects.get(username=request.data['user']['username'])
+        serializer = BarrowProductSerializer(data=request.data)
+        product = get_object_or_404(Product, pk=pk)
+        serializer.product = product.id
+        print(serializer)
+        if serializer.is_valid():
+            serializer.save(user=obj)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-#빌린 내역
+#빌린 내역 - 수정필요
 class MyBarrowProductList(APIView):
     def get(self, request): 
-        if request.user.is_authenticated:
-            queryset = BarrowProduct.objects.filter(user=request.user)
-            serializer = BarrowProductSerializer(queryset, many=True)
-            return Response(serializer.data)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        username = request.GET.get('username', None)
+        obj  = User.objects.get(username=username)
+        queryset = BarrowProduct.objects.filter(user=obj)
+        serializer = BarrowProductSerializer(queryset, many=True)
+        return Response(serializer.data)
 
 #빌려준 내역
 class MyProductList(APIView):
     def get(self, request):
-        if request.user.is_authenticated:
-            queryset = Product.objects.filter(owner = request.user)
-            serializer = ProductSerializer(queryset, many=True)
-            return Response(serializer.data)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        username = request.GET.get('username', None)
+        obj  = User.objects.get(username=username)
+        queryset = Product.objects.filter(owner = obj)
+        serializer = ProductSerializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class MyBarrowProductDetail(APIView):
@@ -147,13 +149,14 @@ class ReturnProduct(APIView):
         return product
 
     def get(self, request, pk): #디테일뷰
-        if request.user.is_authenticated:
-            product = self.get_object(pk)
-            if (product.user == request.user):
-                product.is_return = True
-                product.product.is_barrowed = False
-                serializer = BarrowProductSerializer(product)
-                return Response(serializer.data)
+        product = self.get_object(pk)
+        username = request.GET.get('username', None)
+        obj  = User.objects.get(username=username)
+        if (product.user == obj):
+            product.is_return = True
+            product.product.is_barrowed = False
+            serializer = BarrowProductSerializer(product)
+            return Response(serializer.data)
         return Response(status=status.HTTP_400_BAD_REQUEST)
         
 
