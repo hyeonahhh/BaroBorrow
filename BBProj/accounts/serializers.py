@@ -1,3 +1,4 @@
+from dataclasses import field
 from .models import User
 from rest_framework import serializers
 
@@ -19,3 +20,8 @@ class UserLikeSerializer(serializers.ModelSerializer):
         fields = [
             'username'
         ]
+
+class UserBasicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'nickname']

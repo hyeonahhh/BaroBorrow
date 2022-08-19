@@ -1,45 +1,27 @@
-from datetime import datetime
+from datetime import datetime, date, timedelta
+from django.utils.dateformat import DateFormat
 from django.shortcuts import render, redirect
-from carton.cart import Cart
 from .models import Product, BarrowProduct
 from django.http import HttpResponse
-from .serializers import ProductSerializer, BarrowProductSerializer
+from .serializers import ProductLikeSerializer, ProductSerializer, BarrowProductSerializer
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import status
 from rest_framework.views import APIView
 from django.http import Http404
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
+from rest_framework import viewsets
+from rest_framework.filters import SearchFilter
+from django_filters.rest_framework import DjangoFilterBackend
 
 # Create your views here.
-class ProductViewSet(ModelViewSet):
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializer
-
-def add_cart(request, product_id):
-    cart = Cart(request.session)
-    product = Product.objects.get(id=product_id)
-    price = product.rental_fee
-    cart.add(product, price)
-    return redirect('show_cart')
-
-def show_cart(request):
-    return render(request, '')
-
-def remove_cart(request, product_id):
-    cart = Cart(request.session)
-    product = Product.objects.get(id=product_id)
-    cart.remove(product)
-    return redirect('show_cart')
-
-
 
 def home(request):
     products = Product.objects.filter()
     return render(request, '')
 
 class ProductLikeDetail(APIView):
-    def productlike(self, request, pk):
+    def get(self, request, pk):
         if request.user.is_authenticated:
             product = get_object_or_404(Product, pk=pk)
             if product.like_users.filter(pk=request.user.pk).exists():
@@ -48,22 +30,20 @@ class ProductLikeDetail(APIView):
             else:
                 product.like_users.add(request.user)
                 product.save()
-            return Response(status=status.HTTP_200_OK)
+            serializer = ProductLikeSerializer(product)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 class ProductList(APIView):
-    def get(self, request): #물품 목록들 조회
-        products = Product.objects.all()
+    def get(self, request, format=None): #물품 목록들 조회
+        products = Product.objects.filter(barrow_available_end__range=[date.today(), date.today() + timedelta(weeks=500)]).values().all()
         serializers = ProductSerializer(products, many=True)
         return Response(serializers.data)
     
     def post(self, request): #빌려주기 작성
         serializer = ProductSerializer(data=request.data)
-        serializer.owner = request.user
-        print(serializer)
         if serializer.is_valid():
-            serializer.save()
-            #serializer.save()
+            serializer.save(owner=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -73,17 +53,17 @@ class ProductDetail(APIView):
         product = get_object_or_404(Product, pk=pk)
         return product
 
-    def get(self, request, pk): #디테일뷰
+    def get(self, request, pk, format=None): #디테일뷰
         product = self.get_object(pk)
-        serializer = ProductSerializer(product)
+        serializer = ProductLikeSerializer(product)
         return Response(serializer.data)
 
-    def delete(self, request, pk): #삭제
+    def delete(self, request, pk, format=None): #삭제
         product = self.get_object(pk)
         product.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def put(self, request, pk):
+    def put(self, request, pk, format=None):
         product = self.get_object(pk)
         serializer = ProductSerializer(product, data = request.data)
         if serializer.is_valid():
@@ -91,36 +71,62 @@ class ProductDetail(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
 
-class BarrowProductList(APIView):
-    def post(self, request):
+class CreateBarrowProduct(APIView):
+    def post(self, request, pk): #빌리기 정보 저장
         serializer = BarrowProductSerializer(data=request.data)
+        product = get_object_or_404(Product, pk=pk)
+        serializer.product = product.id
+        print(serializer)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def get(self, request):
-        queryset = BarrowProduct.objects.all()
+class MyBarrowProductList(APIView):
+    def get(self, request): 
+        queryset = BarrowProduct.objects.filter(user=request.user)
         serializer = BarrowProductSerializer(queryset, many=True)
         return Response(serializer.data)
 
-class BarrowProductDetail(APIView):
+class MyProductList(APIView):
+    def get(self, request):
+        queryset = Product.objects.filter(owner = request.user)
+        serializer = ProductSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class MyBarrowProductDetail(APIView):
     def get_object(self, pk):
-        if BarrowProduct.barrow_end < datetime.date.today():
-            BarrowProduct.is_activate = False
-        
         try:
             return BarrowProduct.objects.get(pk=pk)
         except BarrowProduct.DoesNotExist:
             raise Http404
 
-    def get(self, request, pk):
+    def get(self, request, pk): #내 바로 내역 - 디테일
         borrow_product = self.get_object(pk)
         serializer = BarrowProductSerializer(borrow_product)
         return Response(serializer.data)
 
+#검색
+class ProductViewSet(viewsets.ModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
 
+    filter_backends = [SearchFilter]
+    search_fields = ('product_name',)
 
+#반납
+class ReturnProduct(APIView):
+    def get_object(self, pk):
+        product = get_object_or_404(BarrowProduct, pk=pk)
+        return product
+
+    def get(self, request, pk): #디테일뷰
+        product = self.get_object(pk)
+        product.is_return = True
+        product.product.is_barrowed = False
+        serializer = BarrowProductSerializer(product)
+        return Response(serializer.data)
 
 
 

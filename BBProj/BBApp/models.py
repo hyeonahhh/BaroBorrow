@@ -39,12 +39,12 @@ class Product(models.Model):
 
 class BarrowProduct(models.Model):
     #빌린 사람
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='myborrowproducts')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='myborrowproducts', blank=True, null=True)
     #물품 id
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='barrowed')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='barrowed', blank=True, null=True)
     #빌리는 기간 시작
     barrow_start = models.DateField()
     #빌리는 기간 끝
     barrow_end = models.DateField()
     #반납되었는지 여부
-    is_return = models.BooleanField()
+    is_return = models.BooleanField(default=False)
