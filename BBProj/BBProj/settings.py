@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 import os
-
+from django.core.exceptions import ImproperlyConfigured
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -21,13 +21,38 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-0zb_%#_yodz3+ox%#((^fk2v&3t@fglhb#1l!-5w&q#&*#oh^6'
+
+def get_env_variable(var_name):
+  try:
+    return os.environ[var_name]
+  except KeyError:
+    error_msg = 'Set the {} environment variable'.format(var_name)
+    raise ImproperlyConfigured(error_msg)
+
+SECRET_KEY = get_env_variable('DJANGO_SECRET')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [ '*' ]
 
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_CREDENTIALS = True
+
+# import environ
+
+# env = environ.Env()
+
+# # read th .env file
+# environ.Env.read_env()
+
+# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# SECRET_KEY = env('SECRET_KEY')
+
+# DEBUG = env('DEBUG')
+
+# ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -40,18 +65,46 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'BBApp',
     'accounts',
-    'carton',
+    'rest_framework',
+    'corsheaders',
+    'django_filters',
 ]
 
+AUTH_USER_MODEL = 'accounts.User'
+
+LOGIN_REDIRECT_URL = '/product/'
+
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
+
+
+CORS_ORIGIN_WHITELIST = (
+    "http://localhost:3000",
+)
+
+REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
+    'DEFAULT_RENDERER_CLASSES': (
+        'djangorestframework_camel_case.render.CamelCaseJSONRenderer',
+        'djangorestframework_camel_case.render.CamelCaseBrowsableAPIRenderer',
+    ),
+    'DEFAULT_PARSER_CLASSES': (
+        'djangorestframework_camel_case.parser.CamelCaseFormParser',
+        'djangorestframework_camel_case.parser.CamelCaseMultiPartParser',
+        'djangorestframework_camel_case.parser.CamelCaseJSONParser',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+}
 
 ROOT_URLCONF = 'BBProj.urls'
 
@@ -73,16 +126,30 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'BBProj.wsgi.application'
 
+CSRF_TRUSTED_ORIGINS = ['http://*.127.0.0.1', 'http://localhost:3000']
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+		'NAME': get_env_variable('DATABASE'),
+        'USER': get_env_variable('DB_USER'),
+        'PASSWORD': get_env_variable('DB_PASSWORD'),
+        'HOST': get_env_variable('DB_HOST'),
+        'PORT': get_env_variable('DB_PORT'),
+        'OPTIONS':{
+            'init_command' : "SET sql_mode='STRICT_TRANS_TABLES'"
+        }
     }
 }
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 
 # Password validation
@@ -103,6 +170,19 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTHENTICATION_BACKENDS = (
+    ('django.contrib.auth.backends.ModelBackend'),
+)
+
+
+CORS_ALLOW_METHODS = [
+'DELETE',
+'GET',
+'OPTIONS',
+'PATCH',
+'PUT',
+'POST',
+]
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
@@ -120,7 +200,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 STATIC_URL = 'static/'
-
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
