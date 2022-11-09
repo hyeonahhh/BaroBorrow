@@ -1,3 +1,4 @@
+from io import open_code
 from django.db import models
 from accounts.models import User
 
@@ -50,3 +51,37 @@ class BarrowProduct(models.Model):
     barrow_end = models.DateField()
     #반납되었는지 여부
     is_return = models.BooleanField(default=False)
+    #리뷰되었는지 여부
+    is_reviewed = models.BooleanField(default=False)
+
+class Review(models.Model):
+    #작성자
+    writer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='mywritereviews', blank=True, null=True)
+    #빌린물품
+    barrow_product = models.ForeignKey(BarrowProduct, on_delete=models.CASCADE, related_name='productreview', blank=True, null=True)
+    #거래자
+    trader = models.ForeignKey(User, on_delete=models.CASCADE, related_name='myreviews', blank=True, null=True)
+    #항목1
+    q_1 = models.IntegerField()
+    #항목2
+    q_2 = models.IntegerField()
+    #항목3
+    q_3 = models.IntegerField()
+    #항목4
+    q_4 = models.IntegerField()
+    #항목5
+    q_5 = models.IntegerField()
+
+class ReviewResult(models.Model):
+    #유저
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name = 'myreviewresult', blank=True, null=True)
+    #항목1 - 평균점수
+    av_q1 = models.FloatField()
+    #항목2 - 평균점수
+    av_q2 = models.FloatField()
+    #항목3 - 평균점수
+    av_q3 = models.FloatField()
+    #항목4 - 평균점수
+    av_q4 = models.FloatField()
+    #항목5 - 평균점수
+    av_q5 = models.FloatField()

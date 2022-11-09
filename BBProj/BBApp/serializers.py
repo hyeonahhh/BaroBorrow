@@ -1,5 +1,5 @@
 from rest_framework.serializers import ModelSerializer
-from .models import Product, BarrowProduct
+from .models import Product, BarrowProduct, Review, ReviewResult
 from accounts.serializers import UserLikeSerializer, UserBasicSerializer
 from rest_framework import serializers
 
@@ -27,6 +27,28 @@ class BarrowProductSerializer(ModelSerializer):
     class Meta:
         model = BarrowProduct
         fields = [
-            'user', 'product', 'barrow_start', 'barrow_end', 'is_return'
+            'id', 'user', 'product', 'barrow_start', 'barrow_end', 'is_return', 'is_reviewed'
         ]
         #extra_kwargs = {"user": {"required": False, "allow_null": True}, "product": {"required": False, "allow_null": True}}
+
+
+class ReviewSerializer(ModelSerializer):
+    writer = UserBasicSerializer(required=False, read_only=True)
+    barrow_product = serializers.PrimaryKeyRelatedField(
+        many=False, queryset=Product.objects.all(), required=False
+    )
+    trader = UserBasicSerializer(required=False, read_only=True)
+    class Meta:
+        model = Review
+        fields = [
+            'writer', 'barrow_product', 'trader', 'q_1', 'q_2', 'q_3', 'q_4', 'q_5'
+        ]
+
+
+class ReviewResultSerializer(ModelSerializer):
+    user = UserBasicSerializer(required=False, read_only=True)
+    class Meta:
+        model = ReviewResult
+        fields = [
+            'user', 'av_q1', 'av_q2', 'av_q3', 'av_q4', 'av_q5'
+        ]

@@ -22,17 +22,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 
-def get_env_variable(var_name):
-  try:
-    return os.environ[var_name]
-  except KeyError:
-    error_msg = 'Set the {} environment variable'.format(var_name)
-    raise ImproperlyConfigured(error_msg)
+#def get_env_variable(var_name):
+#  try:
+#    return os.environ[var_name]
+#  except KeyError:
+#    error_msg = 'Set the {} environment variable'.format(var_name)
+#    raise ImproperlyConfigured(error_msg)
 
-SECRET_KEY = get_env_variable('DJANGO_SECRET')
+#SECRET_KEY = get_env_variable('DJANGO_SECRET')
+SECRET_KEY = 'django-insecure-=3i)i+!2xgzxk)((g)z1eznk(4b)dv%nqk3qtvgbastq(_z9_v'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = [ '*' ]
 
@@ -131,25 +132,25 @@ CSRF_TRUSTED_ORIGINS = ['http://*.127.0.0.1', 'http://localhost:3000']
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.mysql',
+#		'NAME': get_env_variable('DATABASE'),
+#        'USER': get_env_variable('DB_USER'),
+#        'PASSWORD': get_env_variable('DB_PASSWORD'),
+#        'HOST': get_env_variable('DB_HOST'),
+#        'PORT': get_env_variable('DB_PORT'),
+#        'OPTIONS':{
+#            'init_command' : "SET sql_mode='STRICT_TRANS_TABLES'"
+#        }
+#    }
+#}
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-		'NAME': get_env_variable('DATABASE'),
-        'USER': get_env_variable('DB_USER'),
-        'PASSWORD': get_env_variable('DB_PASSWORD'),
-        'HOST': get_env_variable('DB_HOST'),
-        'PORT': get_env_variable('DB_PORT'),
-        'OPTIONS':{
-            'init_command' : "SET sql_mode='STRICT_TRANS_TABLES'"
-        }
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
 
 
 # Password validation

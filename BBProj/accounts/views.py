@@ -12,22 +12,27 @@ from rest_framework import generics
 
 from accounts import serializers
 from rest_framework.generics import get_object_or_404
+from rest_framework.response import Response
+from django.http import HttpResponse
 
 
 @csrf_exempt
 def account_list(request):
+   
     if request.method == 'GET':
         query_set = User.objects.all()
         serializer = AccountSerializer(query_set, many=True)
-        return Response(serializer.data, safe=False)
+        #return JsonResponse(serializer.data)
+        return HttpResponse(serializer.data)
 
     elif request.method == 'POST':
         data = JSONParser().parse(request)
         serializer = AccountSerializer(data=data)
+        #print(serializer)
         if serializer.is_valid():
             serializer.save()
-            return JsonResponse({'message':serializer}, status=201)
-        return JsonResponse(serializer.errors, status=400)
+            return HttpResponse({'message':serializer}, status=201)
+        return HttpResponse(serializer.errors, status=400)
 
 
 @csrf_exempt
